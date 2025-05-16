@@ -1,14 +1,28 @@
+import { useContext, useState } from "react";
 import { TextInput, View, Text, Touchable, TouchableOpacity, StyleSheet } from "react-native";
 import { Colors } from "react-native/Libraries/NewAppScreen";
+import { DatosContext } from "./datosContext";
 
 export default function MisDatos(){
+    const { setRatioMannana, setRatioMediodia, setRatioTarde, setRatioNoche, setFactordesensibilidad } = useContext(DatosContext);
+
     return(
         <View>
-            <Text>Ratio de la mañana:</Text><TextInput></TextInput>
-            <Text>Ratio del mediodia:</Text><TextInput></TextInput>
-            <Text>Ratio de la tarde:</Text><TextInput></TextInput>
-            <Text>Ratio de la noche:</Text><TextInput></TextInput>
-            <Text>Factor de sensibilidad:</Text><TextInput></TextInput>
+            <View style={styles.inputtext}>
+                <Text>Ratio de la mañana:</Text><TextInput keyboardType="numeric"></TextInput>
+            </View>
+            <View style={styles.inputtext}>
+                <Text>Ratio del mediodia:</Text><TextInput keyboardType="numeric"></TextInput>
+            </View>
+            <View style={styles.inputtext}>
+                <Text>Ratio de la tarde:</Text><TextInput keyboardType="numeric"></TextInput>
+            </View>
+            <View style={styles.inputtext}>
+                <Text>Ratio de la noche:</Text><TextInput keyboardType="numeric"></TextInput>
+            </View>
+            <View style={styles.inputtext}>
+                <Text>Factor de sensibilidad:</Text><TextInput keyboardType="numeric"></TextInput>
+            </View>
             <TouchableOpacity style={styles.botonExterior}>
                 <Text style={styles.botonInterior}>Guardar</Text>
             </TouchableOpacity>
@@ -28,5 +42,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#45a0cc',
         color: 'white',
         alignItems: 'center',
+    },
+    inputtext:{
+        flexDirection: 'row',
+        justifyContent: 'space-between', 
+        alignItems: 'center',           
+        marginBottom: 15,
     }
 })
