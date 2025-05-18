@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity, Text} from 'react-native';
+//coomponentes
 import MisDatos from './components/misDatos';
+import Calculadora from './components/calculadora';
 
-export default function Home() {
+export default function Home({cerrarSesion}: { cerrarSesion: () => void }) {
+  const[pantalla, setPantalla] = useState('misDatos');
+  function cambiarFragmento(){
+    switch(pantalla){
+      case 'calculadora':
+        return <Calculadora></Calculadora>;
+      case 'misDatos':
+        return <MisDatos></MisDatos>;
+    }
+  }
   return (
    <View>
     <View style={styles.imagenlogo}>
@@ -11,7 +22,7 @@ export default function Home() {
         style={styles.logo}/>
     </View>
     <View style={styles.components}>
-      <MisDatos></MisDatos>
+      {cambiarFragmento()}
     </View>
       <View style={styles.navbar}>
         <TouchableOpacity style={styles.componentenavbar}>
@@ -19,12 +30,12 @@ export default function Home() {
               resizeMode="contain"
               style={styles.botones}/>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.componentenavbar}>
+        <TouchableOpacity style={styles.componentenavbar} onPress={()=>setPantalla('calculadora')}>
           <Image source={require('../../Components/pictures/calculadora.webp')}
               resizeMode="contain"
               style={styles.botones}/>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.componentenavbar}>
+        <TouchableOpacity style={styles.componentenavbar} onPress={()=>setPantalla('misDatos')}>
             <Image source={require('../../Components/pictures/misdatos.webp')}
               resizeMode="contain"
               style={styles.botones}/>
@@ -34,7 +45,7 @@ export default function Home() {
               resizeMode="contain"
               style={styles.botones}/>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.componentenavbar}>
+        <TouchableOpacity style={styles.componentenavbar} onPress={cerrarSesion}>
           <Image source={require('../../Components/pictures/cerrarsesion.webp')}
               resizeMode="contain"
               style={styles.botones}/>
@@ -63,6 +74,11 @@ const styles = StyleSheet.create({
       justifyContent: 'space-between', 
       alignItems: 'center',          
       padding: 10,
+      borderWidth:2,
+      borderColor: 'black',
+      borderRadius: 60,
+      borderBottomColor: 'white',
+      backgroundColor:'white'
     },
     componentenavbar:{
       marginLeft: 20
