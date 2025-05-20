@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Home from './Components/homepage/home';
 import Login from './Components/login/login';
 import { DatosProvider } from './Components/homepage/components/datosContext';
+import Calculadora from './Components/homepage/components/calculadora';
 
 export default function App() {
   const [pantallaActual, setPantallaActual] = useState('login');
@@ -31,7 +32,7 @@ export default function App() {
       <View style={styles.container}>
         <StatusBar style="auto" />
         {pantalla()}
-      </View>
+        </View>
     </DatosProvider>
   );
 }
