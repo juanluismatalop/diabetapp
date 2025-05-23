@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Image,
@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
+  ActivityIndicator,
+  Platform
 } from "react-native";
 import {
   signInWithEmailAndPassword,
@@ -15,11 +17,14 @@ import {
   GoogleAuthProvider,
   signInWithCredential,
 } from "firebase/auth";
-import { auth } from "../../firebase/firebaseConfig";
+import { auth } from "../../firebase/firebase";
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-import * as WebBrowser from "expo-web-browser";
-import * as Google from "expo-auth-session/providers/google";
-WebBrowser.maybeCompleteAuthSession();
+// Configura Google Sign-In
+GoogleSignin.configure({
+  webClientId: '944537282741-009p5g1pp2dof0noeo2u09a3gsabussj.apps.googleusercontent.com',
+  offlineAccess: false,
+});
 
 export default function Login({ loginExitoso }: { loginExitoso: () => void }) {
   const [usuario, setUsuario] = useState('');
@@ -27,54 +32,94 @@ export default function Login({ loginExitoso }: { loginExitoso: () => void }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [nuevoUsuario, setNuevoUsuario] = useState('');
   const [nuevaContrasenna, setNuevaContrasenna] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: '944537282741-009p5g1pp2dof0noeo2u09a3gsabussj.apps.googleusercontent.com', 
-  });
+  const signInWithGoogle = async () => {
+    try {
+      setLoading(true);
+      await GoogleSignin.hasPlayServices();
+      await GoogleSignin.signIn();
+      const { idToken } = await GoogleSignin.getTokens();
 
-  useEffect(() => {
-    if (response?.type === "success") {
-      const idToken = response.authentication?.idToken;
-        if (idToken) {
-            const credential = GoogleAuthProvider.credential(idToken);
-            signInWithCredential(auth, credential)
-            .then(() => loginExitoso())
-            .catch(() => Alert.alert("Error", "Error al iniciar sesión con Google"));
-        } else {
-            Alert.alert("Error", "No se pudo obtener el token de Google");
-        }
+      if (!idToken) {
+        throw new Error("No se pudo obtener el ID Token de Google");
+      }
+
       const credential = GoogleAuthProvider.credential(idToken);
-      signInWithCredential(auth, credential)
-        .then(() => loginExitoso())
-        .catch(() => Alert.alert("Error", "Error al iniciar sesión con Google"));
+      await signInWithCredential(auth, credential);
+      loginExitoso();
+    } catch (error: any) {
+      console.error("Google Sign-In Error:", error);
+      Alert.alert("Error", error.message || "Error al iniciar sesión con Google");
+    } finally {
+      setLoading(false);
     }
-  }, [response]);
+  };
 
   async function procesarLogin() {
+    if (!usuario || !contrasenna) {
+      Alert.alert("Error", "Por favor completa todos los campos");
+      return;
+    }
+
+    setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, usuario, contrasenna);
       loginExitoso();
-    } catch {
-      Alert.alert("Error", "Usuario o contraseña incorrectos");
+    } catch (error: any) {
+      let errorMessage = "Usuario o contraseña incorrectos";
+      if (error.code === 'auth/invalid-email') {
+        errorMessage = "Email inválido";
+      } else if (error.code === 'auth/user-not-found') {
+        errorMessage = "Usuario no encontrado";
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = "Contraseña incorrecta";
+      }
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
     }
   }
 
   async function procesarRegistro() {
+    if (!nuevoUsuario || !nuevaContrasenna) {
+      Alert.alert("Error", "Por favor completa todos los campos");
+      return;
+    }
+
+    if (nuevaContrasenna.length < 6) {
+      Alert.alert("Error", "La contraseña debe tener al menos 6 caracteres");
+      return;
+    }
+
+    setLoading(true);
     try {
       await createUserWithEmailAndPassword(auth, nuevoUsuario, nuevaContrasenna);
-      Alert.alert("Éxito", "Usuario registrado");
+      Alert.alert("Éxito", "Usuario registrado correctamente");
       setModalVisible(false);
-    } catch {
-      Alert.alert("Error", "No se pudo registrar");
+      setNuevoUsuario('');
+      setNuevaContrasenna('');
+    } catch (error: any) {
+      let errorMessage = "No se pudo registrar";
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = "El email ya está registrado";
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = "Email inválido";
+      }
+      Alert.alert("Error", errorMessage);
+    } finally {
+      setLoading(false);
     }
-  }
-
-  function iniciarConGoogle() {
-    promptAsync();
   }
 
   return (
     <View style={styles.container}>
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#45a0cc" />
+        </View>
+      )}
+
       <View style={styles.imagenlogo}>
         <Image
           source={require("../../Components/pictures/diabetapp.png")}
@@ -85,6 +130,7 @@ export default function Login({ loginExitoso }: { loginExitoso: () => void }) {
 
       <View style={styles.formulario}>
         <Text style={styles.titulo}>Iniciar Sesión</Text>
+        
         <TextInput
           placeholder="Correo electrónico"
           style={styles.input}
@@ -92,55 +138,89 @@ export default function Login({ loginExitoso }: { loginExitoso: () => void }) {
           onChangeText={setUsuario}
           autoCapitalize="none"
           keyboardType="email-address"
+          placeholderTextColor="#999"
         />
+        
         <TextInput
           placeholder="Contraseña"
           style={styles.input}
           value={contrasenna}
           onChangeText={setContrasenna}
           secureTextEntry
+          placeholderTextColor="#999"
         />
 
-        <TouchableOpacity onPress={procesarLogin} style={styles.boton}>
+        <TouchableOpacity 
+          onPress={procesarLogin} 
+          style={styles.boton}
+          disabled={loading}
+        >
           <Text style={styles.botonTexto}>Entrar</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={[styles.boton, styles.botonSecundario]}>
+        <TouchableOpacity 
+          onPress={() => setModalVisible(true)} 
+          style={[styles.boton, styles.botonSecundario]}
+          disabled={loading}
+        >
           <Text style={styles.botonTexto}>Registrarse</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={iniciarConGoogle} style={styles.botonGoogle}>
+        <TouchableOpacity 
+          onPress={signInWithGoogle} 
+          style={styles.botonGoogle}
+          disabled={loading}
+        >
           <Image
-            source={require("../../Components/pictures/Google2016Circle.webp")}
+            source={require("../../Components/pictures/google_logo_icon_147282.webp")}
             style={styles.logoGoogle}
           />
           <Text style={styles.botonTextoGoogle}>Iniciar con Google</Text>
         </TouchableOpacity>
       </View>
 
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+      <Modal 
+        visible={modalVisible} 
+        animationType="slide" 
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.tituloModal}>Registrar nuevo usuario</Text>
+            
             <TextInput
-              placeholder="Correo"
+              placeholder="Correo electrónico"
               value={nuevoUsuario}
               onChangeText={setNuevoUsuario}
               style={styles.input}
               autoCapitalize="none"
               keyboardType="email-address"
+              placeholderTextColor="#999"
             />
+            
             <TextInput
-              placeholder="Contraseña"
+              placeholder="Contraseña (mínimo 6 caracteres)"
               value={nuevaContrasenna}
               onChangeText={setNuevaContrasenna}
               style={styles.input}
               secureTextEntry
+              placeholderTextColor="#999"
             />
-            <TouchableOpacity onPress={procesarRegistro} style={styles.boton}>
+            
+            <TouchableOpacity 
+              onPress={procesarRegistro} 
+              style={styles.boton}
+              disabled={loading}
+            >
               <Text style={styles.botonTexto}>Registrar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setModalVisible(false)} style={[styles.boton, styles.botonCancelar]}>
+            
+            <TouchableOpacity 
+              onPress={() => setModalVisible(false)} 
+              style={[styles.boton, styles.botonCancelar]}
+              disabled={loading}
+            >
               <Text style={styles.botonTexto}>Cancelar</Text>
             </TouchableOpacity>
           </View>
@@ -156,90 +236,106 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
   imagenlogo: {
     alignItems: "center",
     marginBottom: 20,
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
   },
   formulario: {
     backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 20,
+    padding: 25,
+    borderRadius: 15,
     shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
   },
   titulo: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 25,
     textAlign: "center",
+    color: '#333',
   },
   input: {
-    borderColor: "#ccc",
+    borderColor: "#ddd",
     borderWidth: 1,
     borderRadius: 10,
     marginBottom: 15,
-    padding: 10,
+    padding: 15,
     backgroundColor: "#fff",
+    fontSize: 16,
   },
   boton: {
     backgroundColor: "#45a0cc",
     borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
+    padding: 15,
+    marginBottom: 12,
+    alignItems: 'center',
   },
   botonSecundario: {
     backgroundColor: "#58b4e1",
   },
   botonCancelar: {
-    backgroundColor: "#bbb",
+    backgroundColor: "#e74c3c",
+    marginTop: 5,
   },
   botonTexto: {
     color: "#fff",
     fontWeight: "bold",
-    textAlign: "center",
+    fontSize: 16,
   },
   botonGoogle: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#fff",
-    padding: 10,
+    padding: 12,
     borderRadius: 10,
-    borderColor: "#ccc",
+    borderColor: "#ddd",
     borderWidth: 1,
-    marginTop: 10,
+    marginTop: 15,
   },
   logoGoogle: {
     width: 24,
     height: 24,
-    marginRight: 10,
+    marginRight: 12,
   },
   botonTextoGoogle: {
     color: "#333",
     fontWeight: "bold",
+    fontSize: 16,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: "#000000aa",
+    backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
   modalContent: {
-    width: 320,
+    width: '100%',
+    maxWidth: 350,
     backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 20,
+    padding: 25,
+    borderRadius: 15,
   },
   tituloModal: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 10,
+    marginBottom: 20,
     textAlign: "center",
+    color: '#333',
   },
 });
