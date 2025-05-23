@@ -17,7 +17,6 @@ export default function Notas(){
             setVentanaAbierta(false);
         }
     }
-
     return(
         <View>
             <ScrollView>

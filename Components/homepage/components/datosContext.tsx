@@ -8,6 +8,8 @@ export function DatosProvider({ children }) {
   const [ratioTarde, setRatioTarde] = useState(0);
   const [ratioNoche, setRatioNoche] = useState(0);
   const [factorSensibilidad, setFactorSensibilidad] = useState(0);
+  const [modoMonitor, setModoMonitor]=useState(false);
+  const [ninnos, setNinnos]=useState([])
 
   const value = {
     ratioMannana,
@@ -19,7 +21,11 @@ export function DatosProvider({ children }) {
     ratioNoche,
     setRatioNoche,
     factorSensibilidad,
-    setFactorSensibilidad
+    setFactorSensibilidad,
+    modoMonitor,
+    setModoMonitor,
+    ninnos,
+    setNinnos,
   };
 
   return (

@@ -4,6 +4,7 @@ import { View, Image, StyleSheet, TouchableOpacity, Text} from 'react-native';
 import MisDatos from './components/misDatos';
 import Calculadora from './components/calculadora';
 import Notas from './components/notas';
+import Ajustes from './components/ajustes';
 
 export default function Home({cerrarSesion}: { cerrarSesion: () => void }) {
   const[pantalla, setPantalla] = useState('notas');
@@ -15,6 +16,8 @@ export default function Home({cerrarSesion}: { cerrarSesion: () => void }) {
         return <MisDatos></MisDatos>;
       case 'notas':
         return <Notas></Notas>
+      case 'ajustes':
+        return <Ajustes/>
     }
   }
   return (
@@ -28,7 +31,7 @@ export default function Home({cerrarSesion}: { cerrarSesion: () => void }) {
       {cambiarFragmento()}
     </View>
       <View style={styles.navbar}>
-        <TouchableOpacity style={styles.componentenavbar}>
+        <TouchableOpacity style={styles.componentenavbar} onPress={()=>setPantalla('ajustes')}>
           <Image source={require('../../Components/pictures/ajustes.webp')}
               resizeMode="contain"
               style={styles.botones}/>
