@@ -172,7 +172,7 @@ export default function Login({ loginExitoso }: { loginExitoso: () => void }) {
           disabled={loading}
         >
           <Image
-            source={require("../../Components/pictures/google_logo_icon_147282.webp")}
+            source={require("../../Components/pictures/Google2016Circle.png")}
             style={styles.logoGoogle}
           />
           <Text style={styles.botonTextoGoogle}>Iniciar con Google</Text>

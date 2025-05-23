@@ -1,95 +1,128 @@
 import React, { useState } from 'react';
-import { View, Image, StyleSheet, TouchableOpacity, Text} from 'react-native';
-//coomponentes
+import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
+// Componentes
 import MisDatos from './components/misDatos';
 import Calculadora from './components/calculadora';
 import Notas from './components/notas';
 import Ajustes from './components/ajustes';
 
-export default function Home({cerrarSesion}: { cerrarSesion: () => void }) {
-  const[pantalla, setPantalla] = useState('notas');
-  function cambiarFragmento(){
-    switch(pantalla){
+export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
+  const [pantalla, setPantalla] = useState('notas');
+
+  function cambiarFragmento() {
+    switch (pantalla) {
       case 'calculadora':
-        return <Calculadora></Calculadora>;
+        return <Calculadora />;
       case 'misDatos':
-        return <MisDatos></MisDatos>;
+        return <MisDatos />;
       case 'notas':
-        return <Notas></Notas>
+        return <Notas />;
       case 'ajustes':
-        return <Ajustes/>
+        return <Ajustes />;
+      default:
+        return <Notas />;
     }
   }
+
   return (
-   <View>
-    <View style={styles.imagenlogo}>
-      <Image source={require('../../Components/pictures/diabetapp.png')}
-        resizeMode="contain"
-        style={styles.logo}/>
-    </View>
-    <View style={styles.components}>
-      {cambiarFragmento()}
-    </View>
+    <View style={styles.container}>
+      <View style={styles.imagenlogo}>
+        <Image
+          source={require('../../Components/pictures/diabetapp.png')}
+          resizeMode="contain"
+          style={styles.logo}
+        />
+      </View>
+
+      <View style={styles.content}>{cambiarFragmento()}</View>
+
       <View style={styles.navbar}>
-        <TouchableOpacity style={styles.componentenavbar} onPress={()=>setPantalla('ajustes')}>
-          <Image source={require('../../Components/pictures/ajustes.webp')}
-              resizeMode="contain"
-              style={styles.botones}/>
+        <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('ajustes')}>
+          <Image
+            source={require('../../Components/pictures/ajustes.webp')}
+            resizeMode="contain"
+            style={styles.icon}
+          />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.componentenavbar} onPress={()=>setPantalla('calculadora')}>
-          <Image source={require('../../Components/pictures/calculadora.webp')}
-              resizeMode="contain"
-              style={styles.botones}/>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('calculadora')}>
+          <Image
+            source={require('../../Components/pictures/calculadora.webp')}
+            resizeMode="contain"
+            style={styles.icon}
+          />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.componentenavbar} onPress={()=>setPantalla('misDatos')}>
-            <Image source={require('../../Components/pictures/misdatos.webp')}
-              resizeMode="contain"
-              style={styles.botones}/>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('misDatos')}>
+          <Image
+            source={require('../../Components/pictures/misdatos.webp')}
+            resizeMode="contain"
+            style={styles.icon}
+          />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.componentenavbar} onPress={()=>setPantalla('notas')}>
-            <Image source={require('../../Components/pictures/notas.png')}
-              resizeMode="contain"
-              style={styles.botones}/>
+
+        <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('notas')}>
+          <Image
+            source={require('../../Components/pictures/notas.png')}
+            resizeMode="contain"
+            style={styles.icon}
+          />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.componentenavbar} onPress={cerrarSesion}>
-          <Image source={require('../../Components/pictures/cerrarsesion.webp')}
-              resizeMode="contain"
-              style={styles.botones}/>
+
+        <TouchableOpacity style={styles.navButton} onPress={cerrarSesion}>
+          <Image
+            source={require('../../Components/pictures/cerrarsesion.webp')}
+            resizeMode="contain"
+            style={styles.icon}
+          />
         </TouchableOpacity>
       </View>
     </View>
   );
-  
 }
+
 const styles = StyleSheet.create({
-    logo:{
-      width: 100,
-      height: 100,
-      marginBottom: 20,
-    },
-    botones:{
-      width: 50,
-      height: 50,
-    },
-    components:{
-      width: "100%",
-      marginBottom: 20,
-    },
-    navbar: {
-      flexDirection: 'row',
-      justifyContent: 'space-between', 
-      alignItems: 'center',          
-      padding: 10,
-      borderWidth:2,
-      borderColor: 'black',
-      borderRadius: 60,
-      borderBottomColor: 'white',
-      backgroundColor:'white'
-    },
-    componentenavbar:{
-      marginLeft: 20
-    },
-    imagenlogo:{
-      alignItems: 'center'
-    }
-  })
+  container: {
+    flex: 1,
+    padding: 20,
+  },
+  imagenlogo: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+  },
+  content: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
+    marginBottom: 15,
+  },
+  navbar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    paddingVertical: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  navButton: {
+    paddingHorizontal: 10,
+  },
+  icon: {
+    width: 40,
+    height: 40,
+  },
+});
