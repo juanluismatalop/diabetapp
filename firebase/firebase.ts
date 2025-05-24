@@ -2,13 +2,15 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBqBXvjpiFBVm2RpnM3hVhBYEaf3UkkliE",
+  apiKey: "AIzaSyBvNrQygTKtbE71NlzVrugURPmsmVCWEDk",
   authDomain: "diabetapp-b39e0.firebaseapp.com",
   projectId: "diabetapp-b39e0",
-  storageBucket: "diabetapp-b39e0.firebasestorage.app",
+  storageBucket: "diabetapp-b39e0.appspot.com",
   messagingSenderId: "944537282741",
-  appId: "TU_APP_ID",
+  appId: "1:944537282741:android:675980e45c8e375496b6fc",
 };
 
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+const auth = getAuth(app);
+
+export { auth };

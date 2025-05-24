@@ -5,6 +5,7 @@ import MisDatos from './components/misDatos';
 import Calculadora from './components/calculadora';
 import Notas from './components/notas';
 import Ajustes from './components/ajustes';
+import RecordatorioLenta from './components/recordatorioLenta';
 
 export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
   const [pantalla, setPantalla] = useState('notas');
@@ -19,6 +20,8 @@ export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
         return <Notas />;
       case 'ajustes':
         return <Ajustes />;
+        case 'lenta':
+        return <RecordatorioLenta />;
       default:
         return <Notas />;
     }
@@ -40,6 +43,14 @@ export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
         <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('ajustes')}>
           <Image
             source={require('../../Components/pictures/ajustes.webp')}
+            resizeMode="contain"
+            style={styles.icon}
+          />
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('lenta')}>
+          <Image
+            source={require('../../Components/pictures/17701.png')}
             resizeMode="contain"
             style={styles.icon}
           />

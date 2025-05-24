@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "944537282741",
+    "project_id": "diabetapp-b39e0",
+    "storage_bucket": "diabetapp-b39e0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:944537282741:android:675980e45c8e375496b6fc",
+        "android_client_info": {
+          "package_name": "com.juanluisml.diabetapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "944537282741-009p5g1pp2dof0noeo2u09a3gsabussj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvNrQygTKtbE71NlzVrugURPmsmVCWEDk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "944537282741-009p5g1pp2dof0noeo2u09a3gsabussj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
