@@ -1,136 +1,151 @@
-import React, { useState } from 'react';
-import { 
-  View, Text, TextInput, TouchableOpacity, 
-  Alert, StyleSheet, Modal, ActivityIndicator 
-} from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Modal, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Notifications from 'expo-notifications';
 
 export default function RecordatorioLenta() {
-  const [recordatorios, setRecordatorios] = useState<Array<{
-    id: string;
-    nombre: string;
-    unidades: string;
-    hora: string;
-  }>>([]);
-  const [unidadesLenta, setUnidadesLenta] = useState('');
-  const [nombreRecordatorio, setNombreRecordatorio] = useState('');
+  const [recordatorios, setRecordatorios] = useState<any[]>([]);
+  const [unidades, setUnidades] = useState('');
+  const [nombre, setNombre] = useState('');
   const [hora, setHora] = useState(new Date());
-  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  const agregarRecordatorio = () => {
-    if (!nombreRecordatorio || !unidadesLenta) {
+  useEffect(() => {
+    pedirPermisos();
+  }, []);
+
+  const pedirPermisos = async () => {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permiso requerido', 'Activa las notificaciones en la configuración del dispositivo.');
+    }
+  };
+
+  const programarNotificacion = async (titulo: string, cuerpo: string, fecha: Date) => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: titulo,
+        body: cuerpo,
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.CALENDAR, // Corrected line
+        hour: fecha.getHours(),
+        minute: fecha.getMinutes(),
+        repeats: true,
+      },
+    });
+  };
+
+  const agregarRecordatorio = async () => {
+    if (!nombre || !unidades) {
       Alert.alert("Error", "Completa todos los campos");
       return;
     }
 
-    setLoading(true);
-    
-    setTimeout(() => {
-      const nuevoRecordatorio = {
-        id: Math.random().toString(36).substr(2, 9),
-        nombre: nombreRecordatorio,
-        unidades: unidadesLenta,
-        hora: hora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
+    const nuevaHora = new Date(hora);
+    const ahora = new Date();
+    if (nuevaHora < ahora) {
+      nuevaHora.setDate(nuevaHora.getDate() + 1); 
+    }
 
-      setRecordatorios([...recordatorios, nuevoRecordatorio]);
-      setNombreRecordatorio('');
-      setUnidadesLenta('');
-      setLoading(false);
-      setModalVisible(false);
-      Alert.alert("Éxito", "Recordatorio agregado");
-    }, 1000);
+    const nuevo = {
+      id: Math.random().toString(36).substr(2, 9),
+      nombre,
+      unidades,
+      hora: nuevaHora,
+    };
+
+    await programarNotificacion(
+      'Recordatorio de insulina',
+      `${nombre} - ${unidades} unidades`,
+      nuevaHora
+    );
+
+    setRecordatorios([...recordatorios, nuevo]);
+    setNombre('');
+    setUnidades('');
+    setHora(new Date());
+    setModalVisible(false);
+    Alert.alert("✅ Éxito", "Recordatorio programado");
+  };
+
+  const formatearHora = (fecha: Date) => {
+    return fecha.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const onChangeTime = (event: any, selectedDate?: Date) => {
-    setShowTimePicker(false);
     if (selectedDate) {
       setHora(selectedDate);
     }
+    setShowPicker(false);
   };
 
   return (
     <View style={styles.container}>
-      {loading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#45a0cc" />
-        </View>
-      )}
+      <Text style={styles.titulo}></Text>
 
-      <View style={styles.card}>
-        <Text style={styles.titulo}>Recordatorios de Insulina Lenta</Text>
-        
-        <TouchableOpacity 
-          onPress={() => setModalVisible(true)} 
-          style={[styles.boton, styles.botonSecundario]}
-        >
-          <Text style={styles.botonTexto}>Agregar Recordatorio</Text>
-        </TouchableOpacity>
-
-        {recordatorios.map((recordatorio) => (
-          <View key={recordatorio.id} style={styles.recordatorioItem}>
-            <Text style={styles.recordatorioTexto}>{recordatorio.nombre}</Text>
-            <Text style={styles.recordatorioTexto}>{recordatorio.unidades} unidades</Text>
-            <Text style={styles.recordatorioTexto}>Hora: {recordatorio.hora}</Text>
-          </View>
-        ))}
-      </View>
-
-      <Modal 
-        visible={modalVisible} 
-        animationType="slide" 
-        transparent 
-        onRequestClose={() => setModalVisible(false)}
+      <TouchableOpacity
+        style={styles.botonAgregar}
+        onPress={() => setModalVisible(true)}
       >
-        <View style={styles.modalContainer}>
+        <Text style={styles.botonTexto}>+ Nuevo Recordatorio</Text>
+      </TouchableOpacity>
+
+      {recordatorios.map((rec) => (
+        <View key={rec.id} style={styles.recordatorio}>
+          <Text style={styles.recTitulo}>{rec.nombre}</Text>
+          <Text style={styles.recDescripcion}>{rec.unidades} unidades</Text>
+          <Text style={styles.recHora}>🕒 {formatearHora(rec.hora)}</Text>
+        </View>
+      ))}
+
+      <Modal visible={modalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.tituloModal}>Nuevo Recordatorio</Text>
-            
+            <Text style={styles.modalTitulo}>Agregar Recordatorio</Text>
+
             <TextInput
-              placeholder="Nombre del recordatorio"
-              value={nombreRecordatorio}
-              onChangeText={setNombreRecordatorio}
+              placeholder="Nombre"
+              value={nombre}
+              onChangeText={setNombre}
               style={styles.input}
               placeholderTextColor="#999"
             />
-            
             <TextInput
-              placeholder="Unidades de insulina"
-              value={unidadesLenta}
-              onChangeText={setUnidadesLenta}
-              style={styles.input}
+              placeholder="Unidades"
+              value={unidades}
+              onChangeText={setUnidades}
               keyboardType="numeric"
+              style={styles.input}
               placeholderTextColor="#999"
             />
-            
-            <TouchableOpacity 
-              onPress={() => setShowTimePicker(true)} 
+
+            <TouchableOpacity
+              onPress={() => setShowPicker(true)}
               style={styles.timeButton}
             >
-              <Text style={styles.timeButtonText}>
-                {hora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </Text>
+              <Text style={styles.timeText}>⏱ Hora: {formatearHora(hora)}</Text>
             </TouchableOpacity>
-            
-            {showTimePicker && (
+
+            {showPicker && (
               <DateTimePicker
                 value={hora}
                 mode="time"
-                display="default"
+                is24Hour
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                 onChange={onChangeTime}
               />
             )}
-            
-            <TouchableOpacity onPress={agregarRecordatorio} style={styles.boton}>
+
+            <TouchableOpacity style={styles.botonGuardar} onPress={agregarRecordatorio}>
               <Text style={styles.botonTexto}>Guardar</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={() => setModalVisible(false)} 
-              style={[styles.boton, styles.botonCancelar]}
-            >
+            <TouchableOpacity style={styles.botonCancelar} onPress={() => setModalVisible(false)}>
               <Text style={styles.botonTexto}>Cancelar</Text>
             </TouchableOpacity>
           </View>
@@ -139,111 +154,102 @@ export default function RecordatorioLenta() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    padding: 20, 
-    backgroundColor: '#b5c9f5' 
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 25,
-    width: '100%',
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 5,
+  container: {
+    flex: 1,
+    padding: 20,
   },
   titulo: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 20,
     textAlign: 'center',
+    marginVertical: 20,
+    color: '#333',
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  input: {
-    borderColor: "#ddd",
-    borderWidth: 1,
-    borderRadius: 10,
-    marginBottom: 15,
+  botonAgregar: {
+    backgroundColor: '#45a0cc',
     padding: 15,
-    backgroundColor: "#fff",
+    borderRadius: 15,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  botonTexto: {
+    color: '#fff',
+    fontWeight: 'bold',
     fontSize: 16,
   },
-  boton: {
-    backgroundColor: "#45a0cc",
-    borderRadius: 10,
+  recordatorio: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
     padding: 15,
     marginBottom: 12,
-    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  botonSecundario: { 
-    backgroundColor: "#58b4e1",
-    marginBottom: 20 
+  recTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
   },
-  botonCancelar: { 
-    backgroundColor: "#e74c3c" 
+  recDescripcion: {
+    fontSize: 16,
+    color: '#555',
+    marginVertical: 4,
   },
-  botonTexto: { 
-    color: "#fff", 
-    fontWeight: "bold", 
-    fontSize: 16 
+  recHora: {
+    fontSize: 14,
+    color: '#888',
   },
-  timeButton: {
-    backgroundColor: "#f0f0f0",
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 15,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd'
-  },
-  timeButtonText: {
-    color: "#333",
-    fontWeight: "bold"
-  },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
     padding: 20,
   },
   modalContent: {
-    width: '100%',
-    maxWidth: 350,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
+    borderRadius: 20,
     padding: 25,
-    borderRadius: 15,
   },
-  tituloModal: {
+  modalTitulo: {
     fontSize: 20,
-    fontWeight: "bold",
+    fontWeight: 'bold',
     marginBottom: 20,
-    textAlign: "center",
     color: '#333',
+    textAlign: 'center',
   },
-  recordatorioItem: {
-    backgroundColor: '#f8f9fa',
+  input: {
+    backgroundColor: '#f0f0f0',
     borderRadius: 10,
     padding: 15,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#e9ecef'
-  },
-  recordatorioTexto: {
+    marginBottom: 15,
     fontSize: 16,
-    marginBottom: 5,
-    color: '#333'
-  }
+  },
+  timeButton: {
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    alignItems: 'center',
+  },
+  timeText: {
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  botonGuardar: {
+    backgroundColor: '#45a0cc',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  botonCancelar: {
+    backgroundColor: '#e74c3c',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+  },
 });

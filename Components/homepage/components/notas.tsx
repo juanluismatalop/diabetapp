@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   TouchableOpacity,
@@ -8,21 +8,77 @@ import {
   TextInput,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Notas() {
   const [notas, setNotas] = useState<{ titulo: string; descripcion: string }[]>([]);
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [ventanaAbierta, setVentanaAbierta] = useState(false);
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [notaEditandoIndex, setNotaEditandoIndex] = useState<number | null>(null);
 
-  function annadirNotas() {
+  useEffect(() => {
+    const cargarNotas = async () => {
+      try {
+        const notasGuardadas = await AsyncStorage.getItem('notas');
+        if (notasGuardadas) {
+          setNotas(JSON.parse(notasGuardadas));
+        }
+      } catch (error) {
+        console.error('Error al cargar notas:', error);
+      }
+    };
+    cargarNotas();
+  }, []);
+
+  useEffect(() => {
+    const guardarNotas = async () => {
+      try {
+        await AsyncStorage.setItem('notas', JSON.stringify(notas));
+      } catch (error) {
+        console.error('Error al guardar notas:', error);
+      }
+    };
+    guardarNotas();
+  }, [notas]);
+
+  function annadirOEditarNota() {
     if (titulo.trim() === '' && descripcion.trim() === '') {
-      setVentanaAbierta(false);
+      cerrarModal();
       return;
     }
-    setNotas([...notas, { titulo, descripcion }]);
+
+    if (modoEdicion && notaEditandoIndex !== null) {
+      const nuevasNotas = [...notas];
+      nuevasNotas[notaEditandoIndex] = { titulo, descripcion };
+      setNotas(nuevasNotas);
+    } else {
+      setNotas([...notas, { titulo, descripcion }]);
+    }
+
+    cerrarModal();
+  }
+
+  function eliminarNota(index: number) {
+    const nuevasNotas = notas.filter((_, i) => i !== index);
+    setNotas(nuevasNotas);
+  }
+
+  function editarNota(index: number) {
+    const nota = notas[index];
+    setTitulo(nota.titulo);
+    setDescripcion(nota.descripcion);
+    setNotaEditandoIndex(index);
+    setModoEdicion(true);
+    setVentanaAbierta(true);
+  }
+
+  function cerrarModal() {
     setTitulo('');
     setDescripcion('');
+    setModoEdicion(false);
+    setNotaEditandoIndex(null);
     setVentanaAbierta(false);
   }
 
@@ -33,6 +89,20 @@ export default function Notas() {
           <View key={index} style={styles.nota}>
             <Text style={styles.tituloNota}>{nota.titulo}</Text>
             <Text style={styles.descripcionNota}>{nota.descripcion}</Text>
+            <View style={styles.botonesFila}>
+              <TouchableOpacity
+                style={[styles.botonAccion, styles.botonEditar]}
+                onPress={() => editarNota(index)}
+              >
+                <Text style={styles.botonAccionTexto}>Editar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.botonAccion, styles.botonEliminar]}
+                onPress={() => eliminarNota(index)}
+              >
+                <Text style={styles.botonAccionTexto}>Borrar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ))}
       </ScrollView>
@@ -45,11 +115,13 @@ export default function Notas() {
         visible={ventanaAbierta}
         transparent={true}
         animationType="slide"
-        onRequestClose={() => setVentanaAbierta(false)}
+        onRequestClose={cerrarModal}
       >
         <View style={styles.modalFondo}>
           <View style={styles.modalContenido}>
-            <Text style={styles.modalTitulo}>Nueva Nota</Text>
+            <Text style={styles.modalTitulo}>
+              {modoEdicion ? 'Editar Nota' : 'Nueva Nota'}
+            </Text>
 
             <TextInput
               placeholder="Título"
@@ -67,13 +139,15 @@ export default function Notas() {
               placeholderTextColor="#999"
             />
 
-            <TouchableOpacity style={styles.botonModal} onPress={annadirNotas}>
-              <Text style={styles.botonTexto}>Añadir</Text>
+            <TouchableOpacity style={styles.botonModal} onPress={annadirOEditarNota}>
+              <Text style={styles.botonTexto}>
+                {modoEdicion ? 'Guardar Cambios' : 'Añadir'}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.botonModal, styles.botonCancelar]}
-              onPress={() => setVentanaAbierta(false)}
+              onPress={cerrarModal}
             >
               <Text style={styles.botonTexto}>Cancelar</Text>
             </TouchableOpacity>
@@ -90,6 +164,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 10,
   },
   nota: {
     backgroundColor: '#fff',
@@ -111,6 +187,27 @@ const styles = StyleSheet.create({
   descripcionNota: {
     fontSize: 15,
     color: '#555',
+  },
+  botonesFila: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  botonAccion: {
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginLeft: 10,
+  },
+  botonEditar: {
+    backgroundColor: '#f1c40f',
+  },
+  botonEliminar: {
+    backgroundColor: '#e74c3c',
+  },
+  botonAccionTexto: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   boton: {
     backgroundColor: '#45a0cc',
