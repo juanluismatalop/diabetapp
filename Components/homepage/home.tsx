@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
 // Componentes
 import MisDatos from './components/misDatos';
@@ -6,9 +6,26 @@ import Calculadora from './components/calculadora';
 import Notas from './components/notas';
 import Ajustes from './components/ajustes';
 import RecordatorioLenta from './components/recordatorioLenta';
+import ModoMonitor from './components/modoMonitor';
+import { DatosContext } from './components/datosContext';
 
 export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
+  const { modoMonitor } = useContext(DatosContext);
   const [pantalla, setPantalla] = useState('notas');
+
+  function activadoModoMonitor(){
+    if(modoMonitor != false){
+      return(
+        <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('monitor')}>
+          <Image
+            source={require('../../Components/pictures/png-trmonitor.png')}
+            resizeMode="contain"
+            style={styles.icon}
+          />
+        </TouchableOpacity>
+      );
+    }
+  }
 
   function cambiarFragmento() {
     switch (pantalla) {
@@ -18,6 +35,8 @@ export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
         return <MisDatos />;
       case 'notas':
         return <Notas />;
+      case 'monitor':
+        return <ModoMonitor/>
       case 'ajustes':
         return <Ajustes />;
         case 'lenta':
@@ -47,6 +66,8 @@ export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
             style={styles.icon}
           />
         </TouchableOpacity>
+
+        {activadoModoMonitor()}
         
         <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('lenta')}>
           <Image
