@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { View, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Image, StyleSheet, TouchableOpacity, Text } from 'react-native';
 // Componentes
 import MisDatos from './components/misDatos';
 import Calculadora from './components/calculadora';
@@ -10,12 +10,28 @@ import ModoMonitor from './components/modoMonitor';
 import { DatosContext } from './components/datosContext';
 
 export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
-  const { modoMonitor } = useContext(DatosContext);
-  const [pantalla, setPantalla] = useState('notas');
+  const datosContext = useContext(DatosContext);
+  
+  if (!datosContext) {
+    throw new Error("Home debe estar dentro de DatosProvider");
+  }
 
-  function activadoModoMonitor(){
-    if(modoMonitor != false){
-      return(
+  const { 
+    modoMonitor, 
+    ratioMannana, 
+    ratioMediodia, 
+    ratioTarde, 
+    ratioNoche, 
+    usuario1 
+  } = datosContext;
+
+  const [pantalla, setPantalla] = useState('notas');
+  
+  console.log(ratioMannana, ratioMediodia, ratioTarde, ratioNoche);
+
+  function activadoModoMonitor() {
+    if (modoMonitor !== false) {
+      return (
         <TouchableOpacity style={styles.navButton} onPress={() => setPantalla('monitor')}>
           <Image
             source={require('../../Components/pictures/png-trmonitor.png')}
@@ -25,6 +41,7 @@ export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
         </TouchableOpacity>
       );
     }
+    return null;
   }
 
   function cambiarFragmento() {
@@ -36,10 +53,10 @@ export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
       case 'notas':
         return <Notas />;
       case 'monitor':
-        return <ModoMonitor/>
+        return <ModoMonitor />;
       case 'ajustes':
         return <Ajustes />;
-        case 'lenta':
+      case 'lenta':
         return <RecordatorioLenta />;
       default:
         return <Notas />;
@@ -55,6 +72,8 @@ export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
           style={styles.logo}
         />
       </View>
+      
+      <Text style={styles.bienvenido}>Bienvenido {usuario1}</Text>
 
       <View style={styles.content}>{cambiarFragmento()}</View>
 
@@ -156,5 +175,16 @@ const styles = StyleSheet.create({
   icon: {
     width: 40,
     height: 40,
+  },
+  bienvenido: {
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#4A90E2', 
+    textAlign: 'center',
+    marginBottom: 15,
+    fontFamily: 'System', 
+    textShadowColor: 'rgba(0, 0, 0, 0.1)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 1,
   },
 });

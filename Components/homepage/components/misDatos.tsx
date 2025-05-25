@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { TextInput, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { TextInput, View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { DatosContext } from "./datosContext";
 
 export default function MisDatos() {
@@ -13,10 +13,10 @@ export default function MisDatos() {
     ratioMediodia,
     ratioTarde,
     ratioNoche,
-    factorSensibilidad
+    factorSensibilidad,
+    maximaRatio,
   } = useContext(DatosContext);
 
-  // Inicializo con valores actuales del contexto para mostrar datos guardados
   const [mannana, setMananna] = useState(ratioMannana.toString());
   const [mediodia, setMediodia] = useState(ratioMediodia.toString());
   const [tarde, setTarde] = useState(ratioTarde.toString());
@@ -24,10 +24,33 @@ export default function MisDatos() {
   const [ff, setFf] = useState(factorSensibilidad.toString());
 
   function Guardar() {
-    setRatioMannana(parseFloat(mannana) || 0);
-    setRatioMediodia(parseFloat(mediodia) || 0);
-    setRatioTarde(parseFloat(tarde) || 0);
-    setRatioNoche(parseFloat(noche) || 0);
+    const ratios = [
+      { nombre: "mañana", valor: parseFloat(mannana) || 0 },
+      { nombre: "mediodía", valor: parseFloat(mediodia) || 0 },
+      { nombre: "tarde", valor: parseFloat(tarde) || 0 },
+      { nombre: "noche", valor: parseFloat(noche) || 0 },
+    ];
+
+    const fueraDeRango = ratios.find((r) => r.valor > maximaRatio);
+
+    if (fueraDeRango) {
+      Alert.alert(
+        "Error de Ratio",
+        `La ratio de la ${fueraDeRango.nombre} (${fueraDeRango.valor}) supera la máxima permitida de ${maximaRatio}`,
+        [{ text: "OK" }]
+      );
+      setMananna(0);
+      setMediodia(0);
+      setTarde(0);
+      setNoche(0);
+      setFf(0)
+      return;
+    }
+
+    setRatioMannana(ratios[0].valor);
+    setRatioMediodia(ratios[1].valor);
+    setRatioTarde(ratios[2].valor);
+    setRatioNoche(ratios[3].valor);
     setFactorSensibilidad(parseFloat(ff) || 0);
   }
 
@@ -40,6 +63,7 @@ export default function MisDatos() {
           onChangeText={setMananna}
           keyboardType="numeric"
           style={styles.styleInput}
+          maxLength={3}
         />
       </View>
       <View style={styles.inputtext}>
@@ -49,6 +73,7 @@ export default function MisDatos() {
           onChangeText={setMediodia}
           keyboardType="numeric"
           style={styles.styleInput}
+          maxLength={3}
         />
       </View>
       <View style={styles.inputtext}>

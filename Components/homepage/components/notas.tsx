@@ -11,7 +11,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Notas() {
-  const [notas, setNotas] = useState<{ titulo: string; descripcion: string }[]>([]);
+  const [notas, setNotas] = useState<
+    { titulo: string; descripcion: string; fecha: string }[]
+  >([]);
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [ventanaAbierta, setVentanaAbierta] = useState(false);
@@ -49,12 +51,25 @@ export default function Notas() {
       return;
     }
 
+    const fecha = new Date().toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     if (modoEdicion && notaEditandoIndex !== null) {
       const nuevasNotas = [...notas];
-      nuevasNotas[notaEditandoIndex] = { titulo, descripcion };
+      nuevasNotas[notaEditandoIndex] = {
+        ...nuevasNotas[notaEditandoIndex],
+        titulo,
+        descripcion,
+        fecha, // ✅ Actualiza la fecha al editar
+      };
       setNotas(nuevasNotas);
     } else {
-      setNotas([...notas, { titulo, descripcion }]);
+      setNotas([...notas, { titulo, descripcion, fecha }]);
     }
 
     cerrarModal();
@@ -89,6 +104,7 @@ export default function Notas() {
           <View key={index} style={styles.nota}>
             <Text style={styles.tituloNota}>{nota.titulo}</Text>
             <Text style={styles.descripcionNota}>{nota.descripcion}</Text>
+            <Text style={styles.fechaNota}>{nota.fecha}</Text>
             <View style={styles.botonesFila}>
               <TouchableOpacity
                 style={[styles.botonAccion, styles.botonEditar]}
@@ -187,6 +203,11 @@ const styles = StyleSheet.create({
   descripcionNota: {
     fontSize: 15,
     color: '#555',
+  },
+  fechaNota: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 5,
   },
   botonesFila: {
     flexDirection: 'row',

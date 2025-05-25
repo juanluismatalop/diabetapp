@@ -1,31 +1,47 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   Alert, Image, Modal, ActivityIndicator, StyleSheet
 } from 'react-native';
 import {
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
-import { auth } from '../../firebase/firebase';
+import {
+  doc, setDoc, getDoc
+} from 'firebase/firestore';
+import { auth, db } from '../../firebase/firebase';
+import { DatosContext } from '../homepage/components/datosContext';
 
-export default function Login({ loginExitoso }: { loginExitoso: () => void }) {
+export default function Login({ loginExitoso }: { loginExitoso: (datosUsuario: any) => void }) {
   const [usuario, setUsuario] = useState('');
   const [contrasenna, setContrasenna] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [nuevoUsuario, setNuevoUsuario] = useState('');
   const [nuevaContrasenna, setNuevaContrasenna] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const {setUsuario1} = useContext(DatosContext)
   const procesarLogin = async () => {
     if (!usuario || !contrasenna) {
       Alert.alert("Error", "Completa todos los campos");
       return;
     }
     setLoading(true);
+    setUsuario1(usuario)
     try {
-      await signInWithEmailAndPassword(auth, usuario, contrasenna);
-      loginExitoso();
+      const userCredential = await signInWithEmailAndPassword(auth, usuario, contrasenna);
+      const uid = userCredential.user.uid;
+
+      const docRef = doc(db, "usuarios", uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        const datos = docSnap.data();
+        loginExitoso({ uid, ...datos });
+      } else {
+        Alert.alert("Aviso", "No se encontraron datos del usuario. Se usarán valores por defecto.");
+        loginExitoso({ uid }); 
+      }
     } catch (error: any) {
       let msg = "Error al iniciar sesión";
       if (error.code === 'auth/invalid-email') msg = "Email inválido";
@@ -49,8 +65,21 @@ export default function Login({ loginExitoso }: { loginExitoso: () => void }) {
 
     setLoading(true);
     try {
-      await createUserWithEmailAndPassword(auth, nuevoUsuario, nuevaContrasenna);
-      Alert.alert("Éxito", "Usuario registrado");
+      const userCredential = await createUserWithEmailAndPassword(auth, nuevoUsuario, nuevaContrasenna);
+      const uid = userCredential.user.uid;
+
+      await setDoc(doc(db, "usuarios", uid), {
+        ratioMannana: 0,
+        ratioMediodia: 0,
+        ratioTarde: 0,
+        ratioNoche: 0,
+        maximaRatio: 4,
+        factorSensibilidad: 0,
+        modoMonitor: false,
+        creadoEn: new Date().toISOString()
+      });
+
+      Alert.alert("Éxito", "Usuario registrado correctamente");
       setModalVisible(false);
       setNuevoUsuario('');
       setNuevaContrasenna('');

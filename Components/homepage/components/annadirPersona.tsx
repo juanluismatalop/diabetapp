@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   TouchableOpacity,
   View,
@@ -8,44 +8,74 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ActivityIndicator
 } from "react-native";
 import { DatosContext } from "./datosContext";
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
-export default function AnnadirPersona() {
-  const { ninnos, setNinnos } = useContext(DatosContext);
+interface Ninno {
+  id: string;
+  nombre: string;
+  ratioManana: number;
+  ratioMediodia: number;
+  ratioTarde: number;
+  ratioNoche: number;
+  factorSensibilidad: number;
+  usuarioId: string;
+}
+
+export default function GestionNinnos() {
+  const {
+    ninnos,
+    cargandoNinnos,
+    addNinno,
+    updateNinno,
+    deleteNinno,
+    usuarioId
+  } = useContext(DatosContext);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [nombre, setNombre] = useState("");
-  const [ratioManana, setRatioManana] = useState("");
-  const [ratioMediodia, setRatioMediodia] = useState("");
-  const [ratioTarde, setRatioTarde] = useState("");
-  const [ratioNoche, setRatioNoche] = useState("");
-  const [factorSensibilidad, setFactorSensibilidad] = useState("");
-  const [editIndex, setEditIndex] = useState(null);
+  const [ratioManana, setRatioManana] = useState("0");
+  const [ratioMediodia, setRatioMediodia] = useState("0");
+  const [ratioTarde, setRatioTarde] = useState("0");
+  const [ratioNoche, setRatioNoche] = useState("0");
+  const [factorSensibilidad, setFactorSensibilidad] = useState("0");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [procesando, setProcesando] = useState(false);
 
-  const editarPersona = (index) => {
-    const persona = ninnos[index];
-    setNombre(persona.nombre);
-    setRatioManana(persona.ratioManana.toString());
-    setRatioMediodia(persona.ratioMediodia.toString());
-    setRatioTarde(persona.ratioTarde.toString());
-    setRatioNoche(persona.ratioNoche.toString());
-    setFactorSensibilidad(persona.factorSensibilidad.toString());
-    setEditIndex(index);
-    setModalVisible(true);
+  // Limpiar formulario al cerrar modal
+  useEffect(() => {
+    if (!modalVisible) {
+      limpiarInputs();
+    }
+  }, [modalVisible]);
+
+  const editarNinno = (id: string) => {
+    const ninno = ninnos.find(n => n.id === id);
+    if (ninno) {
+      setNombre(ninno.nombre);
+      setRatioManana(ninno.ratioManana.toString());
+      setRatioMediodia(ninno.ratioMediodia.toString());
+      setRatioTarde(ninno.ratioTarde.toString());
+      setRatioNoche(ninno.ratioNoche.toString());
+      setFactorSensibilidad(ninno.factorSensibilidad.toString());
+      setEditId(id);
+      setModalVisible(true);
+    }
   };
 
   const limpiarInputs = () => {
     setNombre("");
-    setRatioManana("");
-    setRatioMediodia("");
-    setRatioTarde("");
-    setRatioNoche("");
-    setFactorSensibilidad("");
-    setEditIndex(null);
+    setRatioManana("0");
+    setRatioMediodia("0");
+    setRatioTarde("0");
+    setRatioNoche("0");
+    setFactorSensibilidad("0");
+    setEditId(null);
   };
 
-  const validarDatos = () => {
+  const validarDatos = (): boolean => {
     if (!nombre.trim()) {
       Alert.alert("Error", "El nombre es obligatorio");
       return false;
@@ -53,34 +83,42 @@ export default function AnnadirPersona() {
     return true;
   };
 
-  const guardarPersona = () => {
-    if (!validarDatos()) return;
+  const guardarNinno = async () => {
+    if (!validarDatos() || !usuarioId) return;
+    
+    setProcesando(true);
+    
+    try {
+      const nuevoNinno = {
+        nombre: nombre.trim(),
+        ratioManana: parseFloat(ratioManana) || 0,
+        ratioMediodia: parseFloat(ratioMediodia) || 0,
+        ratioTarde: parseFloat(ratioTarde) || 0,
+        ratioNoche: parseFloat(ratioNoche) || 0,
+        factorSensibilidad: parseFloat(factorSensibilidad) || 0,
+        usuarioId
+      };
 
-    const nuevaPersona = {
-      nombre: nombre.trim(),
-      ratioManana: parseFloat(ratioManana) || 0,
-      ratioMediodia: parseFloat(ratioMediodia) || 0,
-      ratioTarde: parseFloat(ratioTarde) || 0,
-      ratioNoche: parseFloat(ratioNoche) || 0,
-      factorSensibilidad: parseFloat(factorSensibilidad) || 0,
-    };
-
-    if (editIndex !== null) {
-      const ninnosActualizados = [...ninnos];
-      ninnosActualizados[editIndex] = nuevaPersona;
-      setNinnos(ninnosActualizados);
-    } else {
-      setNinnos([...ninnos, nuevaPersona]);
+      if (editId) {
+        await updateNinno(editId, nuevoNinno);
+      } else {
+        await addNinno(nuevoNinno);
+      }
+      
+      setModalVisible(false);
+    } catch (error) {
+      console.error("Error al guardar niño:", error);
+      Alert.alert("Error", "No se pudo guardar el niño. Inténtalo de nuevo.");
+    } finally {
+      setProcesando(false);
     }
-
-    limpiarInputs();
-    setModalVisible(false);
   };
 
-  const eliminarPersona = (index) => {
+  const confirmarEliminar = (id: string) => {
+    const ninno = ninnos.find(n => n.id === id);
     Alert.alert(
-      "Eliminar persona",
-      `¿Estás seguro que quieres eliminar a ${ninnos[index].nombre}?`,
+      "Eliminar niño",
+      `¿Estás seguro que quieres eliminar a ${ninno?.nombre}?`,
       [
         {
           text: "Cancelar",
@@ -89,111 +127,156 @@ export default function AnnadirPersona() {
         {
           text: "Eliminar",
           style: "destructive",
-          onPress: () => {
-            const nuevosNinnos = ninnos.filter((_, i) => i !== index);
-            setNinnos(nuevosNinnos);
-          },
+          onPress: () => eliminarNinno(id),
         },
       ],
       { cancelable: true }
     );
   };
 
+  const eliminarNinno = async (id: string) => {
+    try {
+      await deleteNinno(id);
+    } catch (error) {
+      console.error("Error al eliminar niño:", error);
+      Alert.alert("Error", "No se pudo eliminar el niño. Inténtalo de nuevo.");
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={styles.botonExterior}
-        onPress={() => {
-          limpiarInputs();
-          setModalVisible(true);
-        }}
+        style={styles.botonAgregar}
+        onPress={() => setModalVisible(true)}
+        disabled={cargandoNinnos}
       >
-        <Text style={styles.botonInterior}>Añadir Persona</Text>
+        <Icon name="add" size={24} color="white" />
+        <Text style={styles.textoBotonAgregar}>Añadir Niño</Text>
       </TouchableOpacity>
 
-      <ScrollView style={styles.listaContainer}>
-        {ninnos.map((persona, index) => (
-          <View key={index} style={styles.tarjeta}>
-            <Text style={styles.nombre}>{persona.nombre}</Text>
-            <View style={styles.datosContainer}>
-              <Text style={styles.dato}>Mañana: {persona.ratioManana}</Text>
-              <Text style={styles.dato}>Mediodía: {persona.ratioMediodia}</Text>
-              <Text style={styles.dato}>Tarde: {persona.ratioTarde}</Text>
-              <Text style={styles.dato}>Noche: {persona.ratioNoche}</Text>
-              <Text style={styles.dato}>Sensibilidad: {persona.factorSensibilidad}</Text>
-            </View>
+      {cargandoNinnos ? (
+        <View style={styles.cargandoContainer}>
+          <ActivityIndicator size="large" color="#45a0cc" />
+          <Text style={styles.textoCargando}>Cargando niños...</Text>
+        </View>
+      ) : ninnos.length === 0 ? (
+        <View style={styles.listaVacia}>
+          <Text style={styles.textoListaVacia}>No hay niños registrados</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.listaContainer}>
+          {ninnos.map((ninno) => (
+            <View key={ninno.id} style={styles.tarjeta}>
+              <View style={styles.headerTarjeta}>
+                <Text style={styles.nombre}>{ninno.nombre}</Text>
+              </View>
+              
+              <View style={styles.datosContainer}>
+                <View style={styles.datoRow}>
+                  <Icon name="wb-sunny" size={16} color="#FFA500" />
+                  <Text style={styles.dato}>Mañana: {ninno.ratioManana}</Text>
+                </View>
+                <View style={styles.datoRow}>
+                  <Icon name="wb-sunny" size={16} color="#FFD700" />
+                  <Text style={styles.dato}>Mediodía: {ninno.ratioMediodia}</Text>
+                </View>
+                <View style={styles.datoRow}>
+                  <Icon name="wb-twilight" size={16} color="#FF8C00" />
+                  <Text style={styles.dato}>Tarde: {ninno.ratioTarde}</Text>
+                </View>
+                <View style={styles.datoRow}>
+                  <Icon name="nights-stay" size={16} color="#483D8B" />
+                  <Text style={styles.dato}>Noche: {ninno.ratioNoche}</Text>
+                </View>
+                <View style={styles.datoRow}>
+                  <Icon name="settings" size={16} color="#666" />
+                  <Text style={styles.dato}>Sensibilidad: {ninno.factorSensibilidad}</Text>
+                </View>
+              </View>
 
-            <View style={styles.botonesTarjeta}>
-              <TouchableOpacity
-                style={[styles.botonAccion, styles.botonEditar]}
-                onPress={() => editarPersona(index)}
-              >
-                <Text style={styles.textoBotonAccion}>Editar</Text>
-              </TouchableOpacity>
+              <View style={styles.botonesTarjeta}>
+                <TouchableOpacity
+                  style={[styles.botonAccion, styles.botonEditar]}
+                  onPress={() => editarNinno(ninno.id)}
+                >
+                  <Icon name="edit" size={16} color="white" />
+                  <Text style={styles.textoBotonAccion}> Editar</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.botonAccion, styles.botonEliminar]}
-                onPress={() => eliminarPersona(index)}
-              >
-                <Text style={styles.textoBotonAccion}>Eliminar</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.botonAccion, styles.botonEliminar]}
+                  onPress={() => confirmarEliminar(ninno.id)}
+                >
+                  <Icon name="delete" size={16} color="white" />
+                  <Text style={styles.textoBotonAccion}> Eliminar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
 
       <Modal
         visible={modalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setModalVisible(false)}
+        onRequestClose={() => !procesando && setModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <ScrollView>
-              <Text style={styles.label}>Nombre</Text>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <Text style={styles.tituloModal}>
+                {editId ? "Editar Niño" : "Añadir Nuevo Niño"}
+              </Text>
+              
+              <Text style={styles.label}>Nombre *</Text>
               <TextInput
                 style={styles.input}
                 value={nombre}
                 onChangeText={setNombre}
                 placeholder="Nombre completo"
+                editable={!procesando}
               />
 
-              <Text style={styles.label}>Ratio Mañana</Text>
-              <TextInput
-                style={styles.input}
-                value={ratioManana}
-                onChangeText={setRatioManana}
-                keyboardType="numeric"
-                placeholder="0.00"
-              />
+              <View style={styles.seccionRatios}>
+                <Text style={styles.subtitulo}>Ratios de Insulina</Text>
+                
+                <Text style={styles.label}>Mañana</Text>
+                <TextInput
+                  style={styles.input}
+                  value={ratioManana}
+                  onChangeText={setRatioManana}
+                  keyboardType="numeric"
+                  editable={!procesando}
+                />
 
-              <Text style={styles.label}>Ratio Mediodía</Text>
-              <TextInput
-                style={styles.input}
-                value={ratioMediodia}
-                onChangeText={setRatioMediodia}
-                keyboardType="numeric"
-                placeholder="0.00"
-              />
+                <Text style={styles.label}>Mediodía</Text>
+                <TextInput
+                  style={styles.input}
+                  value={ratioMediodia}
+                  onChangeText={setRatioMediodia}
+                  keyboardType="numeric"
+                  editable={!procesando}
+                />
 
-              <Text style={styles.label}>Ratio Tarde</Text>
-              <TextInput
-                style={styles.input}
-                value={ratioTarde}
-                onChangeText={setRatioTarde}
-                keyboardType="numeric"
-                placeholder="0.00"
-              />
+                <Text style={styles.label}>Tarde</Text>
+                <TextInput
+                  style={styles.input}
+                  value={ratioTarde}
+                  onChangeText={setRatioTarde}
+                  keyboardType="numeric"
+                  editable={!procesando}
+                />
 
-              <Text style={styles.label}>Ratio Noche</Text>
-              <TextInput
-                style={styles.input}
-                value={ratioNoche}
-                onChangeText={setRatioNoche}
-                keyboardType="numeric"
-                placeholder="0.00"
-              />
+                <Text style={styles.label}>Noche</Text>
+                <TextInput
+                  style={styles.input}
+                  value={ratioNoche}
+                  onChangeText={setRatioNoche}
+                  keyboardType="numeric"
+                  editable={!procesando}
+                />
+              </View>
 
               <Text style={styles.label}>Factor de Sensibilidad</Text>
               <TextInput
@@ -201,23 +284,29 @@ export default function AnnadirPersona() {
                 value={factorSensibilidad}
                 onChangeText={setFactorSensibilidad}
                 keyboardType="numeric"
-                placeholder="0.00"
+                editable={!procesando}
               />
 
               <View style={styles.botonesModal}>
                 <TouchableOpacity
                   style={[styles.botonModal, styles.botonCancelar]}
-                  onPress={() => setModalVisible(false)}
+                  onPress={() => !procesando && setModalVisible(false)}
+                  disabled={procesando}
                 >
                   <Text style={styles.textoBotonModal}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.botonModal, styles.botonGuardar]}
-                  onPress={guardarPersona}
+                  style={[styles.botonModal, styles.botonGuardar, procesando && styles.botonDisabled]}
+                  onPress={guardarNinno}
+                  disabled={procesando}
                 >
-                  <Text style={styles.textoBotonModal}>
-                    {editIndex !== null ? "Actualizar" : "Guardar"}
-                  </Text>
+                  {procesando ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.textoBotonModal}>
+                      {editId ? "Actualizar" : "Guardar"}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -231,66 +320,95 @@ export default function AnnadirPersona() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    padding: 16,
+    backgroundColor: '#f8f9fa',
   },
-  botonExterior: {
+  botonAgregar: {
+    flexDirection: 'row',
     backgroundColor: "#45a0cc",
-    borderRadius: 25,
+    borderRadius: 8,
     paddingVertical: 12,
-    paddingHorizontal: 30,
-    alignSelf: 'center',
-    marginBottom: 20,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    elevation: 2,
   },
-  botonInterior: {
+  textoBotonAgregar: {
     color: "white",
     fontWeight: "bold",
     fontSize: 16,
+    marginLeft: 8,
+  },
+  cargandoContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textoCargando: {
+    marginTop: 16,
+    color: '#666',
+  },
+  listaVacia: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  textoListaVacia: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#999',
   },
   listaContainer: {
     flex: 1,
   },
   tarjeta: {
     backgroundColor: "white",
-    borderRadius: 12,
+    borderRadius: 10,
     padding: 16,
-    marginBottom: 15,
-    elevation: 2,
+    marginBottom: 12,
+    elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
+  },
+  headerTarjeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   nombre: {
     fontWeight: "bold",
     fontSize: 18,
-    marginBottom: 8,
     color: '#333',
   },
   datosContainer: {
-    marginBottom: 10,
+    marginVertical: 8,
+  },
+  datoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
   },
   dato: {
     fontSize: 14,
     color: '#555',
-    marginBottom: 4,
+    marginLeft: 8,
   },
   botonesTarjeta: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 10,
-    gap: 10,
+    marginTop: 8,
+    gap: 8,
   },
   botonAccion: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    minWidth: 80,
+    flexDirection: 'row',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -302,7 +420,7 @@ const styles = StyleSheet.create({
   },
   textoBotonAccion: {
     color: "white",
-    fontWeight: "bold",
+    fontWeight: "500",
     fontSize: 14,
   },
   modalOverlay: {
@@ -313,21 +431,38 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "white",
-    borderRadius: 15,
+    borderRadius: 12,
     padding: 20,
     maxHeight: '80%',
   },
-  label: {
-    fontWeight: "bold",
-    marginTop: 15,
-    marginBottom: 5,
+  tituloModal: {
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  label: {
+    fontWeight: "500",
+    marginTop: 12,
+    marginBottom: 6,
+    color: '#555',
+  },
+  subtitulo: {
+    fontWeight: "bold",
+    fontSize: 16,
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  seccionRatios: {
+    marginVertical: 8,
   },
   input: {
     borderColor: "#ddd",
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 15,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     backgroundColor: "white",
     fontSize: 16,
@@ -335,20 +470,24 @@ const styles = StyleSheet.create({
   botonesModal: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 25,
-    gap: 15,
+    marginTop: 20,
+    gap: 12,
   },
   botonModal: {
     flex: 1,
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   botonCancelar: {
     backgroundColor: "#e0e0e0",
   },
   botonGuardar: {
     backgroundColor: "#45a0cc",
+  },
+  botonDisabled: {
+    opacity: 0.6,
   },
   textoBotonModal: {
     color: "white",
