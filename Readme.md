@@ -138,19 +138,19 @@ switch (pantalla) {
 ```
 ### Componentes de Home ###
 
-#### Notas ####
+## Notas ##
     Este componente genera notas donde se guardaran en un scroolView y se guarda en la memoria local del dispositivo movil
     mediante AsyncStorage
 
     Estas notas una vez creadas muestran el titulo descripcion un boton de editar un boton de borrar y la fecha de la ultima modificacion o si no se ha modificado la creacion de la nota
 
-#### Mis Datos ####
+## Mis Datos ##
 
     Este componente se encarga de settear los datos de las ratios de el usuario y el factor de sensibilidad que se guardaran en un Context que los guardara en el firestore y lo podra mandar a cualquier otro componente que llame al context como es la calculadora
 
     Este a su vez tiene un maximo de ratio que se puede modificar en ajustes pero si una de las ratio supera a la hora de guardar los datos te mandara un alerta y volvera a poner el value 0 para que vuelvas a rellenarlos 
 
-#### Calculadora ####
+## Calculadora ##
     Este componente es la esencia de la app que se dedica a calcular las unidades de insulina para a partir de la glucosa y las raciones que vayas a introducir en los TextInput que hay en el componente
 
     __Como usa las ratios__
@@ -172,15 +172,15 @@ switch (pantalla) {
     __Tiempo de Espera__
     Una vez me dijeron que el tiempo de espera es las dos priemeras cifras de la glucosa 
     Ej 243 espero 23 minutos
-#### Recordatorio de Lenta ####
-#### Ajustes ####
+## Recordatorio de Lenta ##
+## Ajustes ##
     Este componente puede hacer dos consas
     - Habilitar o Deshabilitar el modoMonitor
     - Cambiar la RatioMaxima del usuario
-#### Modo Monitor ####
+## Modo Monitor ##
 Solo si esta activo aparecera este boton para acceder al comoponente que tiene dos funcionalidades
-##### Agregar Niños #####
+## Agregar Niños ##
     Aqui creas niños que se guarda en un array de niños donde se guardan las ratios el nombre de el niño y los factores de sensibilidad
-##### Calculo de Niños #####
+## Calculo de Niños ##
     Aqui pones las raciones(porque se entiende que todo los niños comen lo mismo)
     y a partir de las formulas de ```Calculadora``` ponen la cantidades de insulina de cada niño 
