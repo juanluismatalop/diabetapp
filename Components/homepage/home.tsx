@@ -49,7 +49,7 @@ export default function Home({ cerrarSesion }: { cerrarSesion: () => void }) {
       case 'calculadora':
         return <Calculadora />;
       case 'misDatos':
-        return <MisDatos />;
+        return <MisDatos cambiarPantalla={setPantalla} />;
       case 'notas':
         return <Notas />;
       case 'monitor':

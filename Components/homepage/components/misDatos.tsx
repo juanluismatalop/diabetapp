@@ -2,7 +2,7 @@ import { useContext, useState } from "react";
 import { TextInput, View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { DatosContext } from "./datosContext";
 
-export default function MisDatos() {
+export default function MisDatos({ cambiarPantalla }: { cambiarPantalla: (pantalla: string) => void }) {
   const {
     setRatioMannana,
     setRatioMediodia,
@@ -39,11 +39,11 @@ export default function MisDatos() {
         `La ratio de la ${fueraDeRango.nombre} (${fueraDeRango.valor}) supera la máxima permitida de ${maximaRatio}`,
         [{ text: "OK" }]
       );
-      setMananna(0);
-      setMediodia(0);
-      setTarde(0);
-      setNoche(0);
-      setFf(0)
+      setMananna("0");
+      setMediodia("0");
+      setTarde("0");
+      setNoche("0");
+      setFf("0");
       return;
     }
 
@@ -52,7 +52,10 @@ export default function MisDatos() {
     setRatioTarde(ratios[2].valor);
     setRatioNoche(ratios[3].valor);
     setFactorSensibilidad(parseFloat(ff) || 0);
+
+    cambiarPantalla('calculadora');
   }
+
 
   return (
     <View style={styles.container}>

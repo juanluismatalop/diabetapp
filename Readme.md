@@ -2,6 +2,10 @@
 
 autor: Juan Luis Mata Lopez
 
+# APK del proyecto # 
+![APK](./assets/diabetapp.apk)
+# Diagrama de casos de uso #
+![Casos de Uso](./assets/casodeUsos.png)
 ## Para que sirve ## 
 Esta app se a creado con el fin de facilitar el calculo las unidades de insulina
 tanto para 1 o varias personas 
@@ -136,7 +140,7 @@ switch (pantalla) {
       default:
         return <Notas />;
 ```
-### Componentes de Home ###
+## Componentes de Home ##
 
 ## Notas ##
     Este componente genera notas donde se guardaran en un scroolView y se guarda en la memoria local del dispositivo movil
