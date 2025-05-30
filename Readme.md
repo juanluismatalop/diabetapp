@@ -3,7 +3,8 @@
 autor: Juan Luis Mata Lopez
 
 # APK del proyecto # 
-![APK](./assets/diabetapp.apk)
+![Logo](./assets/logo.jpg)
+![Diabetapp](./assets/diabetapp.apk)
 # Diagrama de casos de uso #
 ![Casos de Uso](./assets/casodeUsos.png)
 ## Para que sirve ## 
