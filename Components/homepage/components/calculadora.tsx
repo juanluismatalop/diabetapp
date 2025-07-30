@@ -1,5 +1,11 @@
 import { useContext, useState } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { DatosContext } from "./datosContext";
 
 export default function Calculadora() {
@@ -9,12 +15,15 @@ export default function Calculadora() {
     ratioTarde,
     ratioNoche,
     factorSensibilidad,
+    empezarCorregir,
+    setEmpezarCorregir,
   } = useContext(DatosContext);
 
   const [raciones, setRaciones] = useState("");
   const [glucosa, setGlucosa] = useState("");
   const [insulina, setInsulina] = useState(null);
   const [espera, setEspera] = useState(null);
+  const [nuevoUmbral, setNuevoUmbral] = useState(empezarCorregir.toString());
 
   const hora = new Date().getHours();
 
@@ -22,7 +31,8 @@ export default function Calculadora() {
     const r = parseFloat(raciones) || 0;
     const g = parseFloat(glucosa) || 0;
     let correccion = 0;
-    if (g > 150 && factorSensibilidad) {
+
+    if (g > empezarCorregir && factorSensibilidad) {
       correccion = (g - 100) / factorSensibilidad;
     }
 
@@ -42,6 +52,13 @@ export default function Calculadora() {
     setInsulina(Math.round(dosis));
     setEspera(Math.floor(g / 10));
   }
+
+  const handleGuardarUmbral = () => {
+    const valor = parseInt(nuevoUmbral);
+    if (!isNaN(valor)) {
+      setEmpezarCorregir(valor);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -74,6 +91,19 @@ export default function Calculadora() {
         <Text style={styles.resultValue}>{espera !== null ? espera : "-"}</Text>
       </View>
 
+      <View style={styles.umbralContainer}>
+        <Text style={{ marginBottom: 5, fontWeight: "bold" }}>
+          Empezar a corregir glucosa:
+        </Text>
+        <TextInput
+          style={styles.umbralInput}
+          keyboardType="numeric"
+          value={nuevoUmbral}
+          onChangeText={setNuevoUmbral}
+          onBlur={handleGuardarUmbral}
+        />
+      </View>
+
       <TouchableOpacity style={styles.botonExterior} onPress={calculoDInsulina}>
         <Text style={styles.botonInterior}>Calcular</Text>
       </TouchableOpacity>
@@ -83,7 +113,11 @@ export default function Calculadora() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, alignItems: "center" },
-  inputContainer: { flexDirection: "row", justifyContent: "space-between", marginBottom: 20 },
+  inputContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
   inputGroup: {
     flexDirection: "row",
     alignItems: "center",
@@ -125,4 +159,21 @@ const styles = StyleSheet.create({
     width: 150,
   },
   botonExterior: {},
+  umbralContainer: {
+    marginBottom: 20,
+    alignItems: "center",
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 10,
+    borderColor: "#45a0cc",
+    borderWidth: 1,
+  },
+  umbralInput: {
+    borderWidth: 1,
+    borderColor: "#45a0cc",
+    borderRadius: 10,
+    padding: 5,
+    width: 100,
+    textAlign: "center",
+  },
 });

@@ -10,22 +10,15 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { db, auth } from "../../../firebase/firebase"; // Asegúrate de que esta ruta sea correcta
+import { db, auth } from "../../../firebase/firebase";
 
-// --- Interfaces para tipado ---
-
-// Define la estructura de un niño/niña. Añade aquí todas las propiedades que uses.
 interface Ninno {
   id: string;
   nombre: string;
   fechaCreacion: string;
-  fechaActualizacion?: string; // Opcional, ya que no siempre se actualiza
-  // Añade otras propiedades que uses en tu aplicación para un niño, ejemplo:
-  // edad: number;
-  // sexo: 'masculino' | 'femenino';
+  fechaActualizacion?: string;
 }
 
-// Define la estructura de los datos del usuario que se guardan en Firestore.
 interface UserData {
   ratioMannana: number;
   ratioMediodia: number;
@@ -34,15 +27,15 @@ interface UserData {
   maximaRatio: number;
   factorSensibilidad: number;
   modoMonitor: boolean;
-  ninnosMonitor: string[]; // Un array de IDs de niños
+  ninnosMonitor: string[];
+  empezarCorregir?: number;
 }
 
-// Define las props para el componente DatosProvider.
+
 interface DatosProviderProps {
   children: React.ReactNode;
 }
 
-// Define la estructura del objeto de contexto que se expone a los consumidores.
 interface DatosContextType {
   ratioMannana: number;
   setRatioMannana: React.Dispatch<React.SetStateAction<number>>;
@@ -64,7 +57,7 @@ interface DatosContextType {
   updateNinno: (id: string, datosActualizados: Partial<Ninno>) => Promise<void>;
   deleteNinno: (id: string) => Promise<void>;
   getNinnoById: (id: string) => Ninno | undefined;
-  usuario1: string; // Si usuario1 se refiere a algo diferente al ID de Firebase Auth, asegúrate de su tipo
+  usuario1: string; 
   setUsuario1: React.Dispatch<React.SetStateAction<string>>;
   usuarioId: string | null;
   ninnosMonitor: string[];
@@ -73,15 +66,17 @@ interface DatosContextType {
   activarModoMonitor: (ninnosSeleccionados: string[]) => Promise<void>;
   desactivarModoMonitor: () => Promise<void>;
   cargarNinnosMonitor: (uid: string) => Promise<void>;
+  empezarCorregir: number;
+  setEmpezarCorregir: React.Dispatch<React.SetStateAction<number>>;
+
 }
 
-// Se inicializa el contexto con null, pero se tipa que su valor puede ser DatosContextType o null.
 export const DatosContext = createContext<DatosContextType | null>(null);
 
 export function DatosProvider({ children }: DatosProviderProps) {
-  // Estado para el ID del usuario (puede ser string o null)
+  const [empezarCorregir, setEmpezarCorregir] = useState(150)
+  const [datosCargados, setDatosCargados] = useState(false);
   const [usuarioId, setUsuarioId] = useState<string | null>(null);
-  // Estados para las ratios, factor de sensibilidad, etc.
   const [ratioMannana, setRatioMannana] = useState<number>(0);
   const [ratioMediodia, setRatioMediodia] = useState<number>(0);
   const [ratioTarde, setRatioTarde] = useState<number>(0);
@@ -89,16 +84,12 @@ export function DatosProvider({ children }: DatosProviderProps) {
   const [maximaRatio, setMaximaRatio] = useState<number>(4);
   const [factorSensibilidad, setFactorSensibilidad] = useState<number>(0);
   const [modoMonitor, setModoMonitor] = useState<boolean>(false);
-  // Estados para listas de niños, tipados con la interfaz Ninno
   const [ninnos, setNinnos] = useState<Ninno[]>([]);
-  const [ninnosMonitor, setNinnosMonitor] = useState<string[]>([]); // Solo IDs de niños
-  const [ninnosEnMonitor, setNinnosEnMonitor] = useState<Ninno[]>([]); // Objetos completos de niños
-  // Estado para usuario1 (asumido como string, ajusta si es otro tipo)
+  const [ninnosMonitor, setNinnosMonitor] = useState<string[]>([]); 
+  const [ninnosEnMonitor, setNinnosEnMonitor] = useState<Ninno[]>([]); 
   const [usuario1, setUsuario1] = useState<string>("");
-  // Estado para la carga de niños
   const [cargandoNinnos, setCargandoNinnos] = useState<boolean>(false);
 
-  // Efecto para observar el estado de autenticación del usuario
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -116,56 +107,52 @@ export function DatosProvider({ children }: DatosProviderProps) {
     return () => unsubscribe();
   }, []);
 
-  // Función para cargar los datos del usuario desde Firestore
-  const cargarDatosUsuario = async (uid: string) => { // 'uid' es un string
-    try {
-      const docRef = doc(db, "usuarios", uid);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data() as UserData; // Casteamos los datos a UserData
-        setRatioMannana(data.ratioMannana ?? 0); // Usamos el operador nullish coalescing (??)
-        setRatioMediodia(data.ratioMediodia ?? 0);
-        setRatioTarde(data.ratioTarde ?? 0);
-        setRatioNoche(data.ratioNoche ?? 0);
-        setMaximaRatio(data.maximaRatio ?? 4);
-        setFactorSensibilidad(data.factorSensibilidad ?? 0);
-        setModoMonitor(data.modoMonitor ?? false);
-        setNinnosMonitor(data.ninnosMonitor ?? []);
-      }
-    } catch (error) {
-      console.error("Error al cargar datos del usuario:", error);
+  const cargarDatosUsuario = async (uid: string) => {
+  try {
+    const docRef = doc(db, "usuarios", uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data() as UserData;
+      setRatioMannana(data.ratioMannana ?? 0);
+      setRatioMediodia(data.ratioMediodia ?? 0);
+      setRatioTarde(data.ratioTarde ?? 0);
+      setRatioNoche(data.ratioNoche ?? 0);
+      setMaximaRatio(data.maximaRatio ?? 4);
+      setFactorSensibilidad(data.factorSensibilidad ?? 0);
+      setModoMonitor(data.modoMonitor ?? false);
+      setNinnosMonitor(data.ninnosMonitor ?? []);
+      setEmpezarCorregir(data.empezarCorregir ?? 150); // 👈 Aquí
     }
-  };
+  } catch (error) {
+    console.error("Error al cargar datos del usuario:", error);
+  } finally {
+    setDatosCargados(true);
+  }
+};
 
-  // Función para guardar los datos del usuario en Firestore
-  const guardarDatosUsuario = async (datos: Partial<UserData>) => { // 'datos' es un objeto parcial de UserData
-    if (!usuarioId) return;
-    try {
-      const docRef = doc(db, "usuarios", usuarioId);
-      await setDoc(docRef, {
+
+  const guardarDatosUsuario = async (datos: Partial<UserData>) => {
+  if (!usuarioId) return;
+  try {
+    const docRef = doc(db, "usuarios", usuarioId);
+    await setDoc(
+      docRef,
+      {
         ...datos,
-        ninnosMonitor: modoMonitor ? ninnosMonitor : []
-      }, { merge: true });
-    } catch (error) {
-      console.error("Error al guardar datos del usuario:", error);
-    }
-  };
+        ninnosMonitor: modoMonitor ? ninnosMonitor : [],
+        empezarCorregir, // 👈 Aquí
+      },
+      { merge: true }
+    );
+  } catch (error) {
+    console.error("Error al guardar datos del usuario:", error);
+  }
+};
 
-  // Efecto para guardar automáticamente los datos del usuario cuando cambian ciertas variables de estado
   useEffect(() => {
-    if (!usuarioId) return;
-    guardarDatosUsuario({
-      ratioMannana,
-      ratioMediodia,
-      ratioTarde,
-      ratioNoche,
-      maximaRatio,
-      factorSensibilidad,
-      modoMonitor,
-      ninnosMonitor, // Asegúrate de que esto se guarde si quieres que persista en el documento del usuario
-    });
-  }, [
-    usuarioId, // Añade usuarioId como dependencia aquí para asegurar que se guarde cuando el ID esté disponible
+  if (!usuarioId || !datosCargados) return;
+
+  guardarDatosUsuario({
     ratioMannana,
     ratioMediodia,
     ratioTarde,
@@ -174,9 +161,23 @@ export function DatosProvider({ children }: DatosProviderProps) {
     factorSensibilidad,
     modoMonitor,
     ninnosMonitor,
-  ]);
+    empezarCorregir, // 👈 Aquí
+  });
+}, [
+  usuarioId,
+  datosCargados,
+  ratioMannana,
+  ratioMediodia,
+  ratioTarde,
+  ratioNoche,
+  maximaRatio,
+  factorSensibilidad,
+  modoMonitor,
+  ninnosMonitor,
+  empezarCorregir, // 👈 Aquí
+]);
 
-  // Función para cargar los niños asociados al usuario
+
   const cargarNinnosUsuario = async (uid: string) => {
     setCargandoNinnos(true);
     try {
@@ -185,7 +186,7 @@ export function DatosProvider({ children }: DatosProviderProps) {
 
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...(doc.data() as Omit<Ninno, 'id'>) // Casteamos los datos a Ninno (excluyendo el ID que ya viene del doc.id)
+        ...(doc.data() as Omit<Ninno, 'id'>)
       }));
 
       setNinnos(data);
@@ -196,7 +197,6 @@ export function DatosProvider({ children }: DatosProviderProps) {
     }
   };
 
-  // Función para cargar los niños que están en el modo monitor
   const cargarNinnosMonitor = async (uid: string) => {
     try {
       const monitorRef = collection(db, "usuarios", uid, "monitor");
@@ -211,7 +211,6 @@ export function DatosProvider({ children }: DatosProviderProps) {
     }
   };
 
-  // Función para añadir un nuevo niño
   const addNinno = async (nuevoNinno: Omit<Ninno, 'id' | 'fechaCreacion' | 'fechaActualizacion'>): Promise<string> => {
     console.log("usuarioId:", usuarioId);
     if (!usuarioId) {
@@ -230,7 +229,7 @@ export function DatosProvider({ children }: DatosProviderProps) {
       setNinnos([...ninnos, {
         id: docRef.id,
         ...ninnoConUsuario
-      } as Ninno]); // Aseguramos que el tipo completo de Ninno
+      } as Ninno]); 
 
       return docRef.id;
     } catch (error) {
@@ -239,7 +238,6 @@ export function DatosProvider({ children }: DatosProviderProps) {
     }
   };
 
-  // Función para actualizar los datos de un niño existente
   const updateNinno = async (id: string, datosActualizados: Partial<Ninno>): Promise<void> => {
     if (!usuarioId) {
       console.error("usuarioId no disponible. No se puede actualizar niño.");
@@ -254,14 +252,13 @@ export function DatosProvider({ children }: DatosProviderProps) {
 
       setNinnos(ninnos.map(n =>
         n.id === id ? { ...n, ...datosActualizados } : n
-      ) as Ninno[]); // Aseguramos el tipo completo de Ninno[]
+      ) as Ninno[]); 
     } catch (error) {
       console.error("Error al actualizar niño:", error);
       throw error;
     }
   };
 
-  // Función para eliminar un niño
   const deleteNinno = async (id: string): Promise<void> => {
     if (!usuarioId) {
       console.error("usuarioId no disponible. No se puede eliminar niño.");
@@ -272,7 +269,6 @@ export function DatosProvider({ children }: DatosProviderProps) {
       await deleteDoc(docRef);
       setNinnos(ninnos.filter(n => n.id !== id));
       setNinnosMonitor(ninnosMonitor.filter(ninnoId => ninnoId !== id));
-      // También eliminar de ninnosEnMonitor si existe
       setNinnosEnMonitor(prevNinnosEnMonitor => prevNinnosEnMonitor.filter(n => n.id !== id));
     } catch (error) {
       console.error("Error al eliminar niño:", error);
@@ -280,12 +276,10 @@ export function DatosProvider({ children }: DatosProviderProps) {
     }
   };
 
-  // Función para obtener un niño por su ID
   const getNinnoById = (id: string): Ninno | undefined => {
     return ninnos.find(n => n.id === id);
   };
 
-  // Función para activar el modo monitor
   const activarModoMonitor = async (ninnosSeleccionados: string[]): Promise<void> => {
     if (!usuarioId) {
       console.error("usuarioId no disponible. No se puede activar modo monitor.");
@@ -296,27 +290,21 @@ export function DatosProvider({ children }: DatosProviderProps) {
       setModoMonitor(true);
       setNinnosMonitor(ninnosSeleccionados);
 
-      // 1. Guardar en el documento usuario
       const docRef = doc(db, "usuarios", usuarioId);
       await setDoc(docRef, {
         modoMonitor: true,
         ninnosMonitor: ninnosSeleccionados
       }, { merge: true });
 
-      // 2. Guardar en la subcolección monitor
       const monitorRef = collection(db, "usuarios", usuarioId, "monitor");
 
-      // Limpiar subcolección existente
       const snapshot = await getDocs(monitorRef);
       await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
 
-      // Añadir nuevos niños al monitor
       const nuevosNinnosEnMonitor: Ninno[] = [];
       await Promise.all(ninnosSeleccionados.map(async (ninnoId) => {
         const ninno = getNinnoById(ninnoId);
         if (ninno) {
-          // Asegúrate de que el ID del documento en la subcolección monitor sea el mismo que el ID del ninno original
-          // Esto facilita la referencia y la eliminación
           await setDoc(doc(monitorRef, ninno.id), {
             ...ninno,
             fechaSeleccion: new Date().toISOString()
@@ -325,7 +313,6 @@ export function DatosProvider({ children }: DatosProviderProps) {
         }
       }));
 
-      // Actualizar estado local
       setNinnosEnMonitor(nuevosNinnosEnMonitor);
 
     } catch (error) {
@@ -334,7 +321,6 @@ export function DatosProvider({ children }: DatosProviderProps) {
     }
   };
 
-  // Función para desactivar el modo monitor
   const desactivarModoMonitor = async (): Promise<void> => {
     if (!usuarioId) {
       console.error("usuarioId no disponible. No se puede desactivar modo monitor.");
@@ -346,14 +332,12 @@ export function DatosProvider({ children }: DatosProviderProps) {
       setNinnosMonitor([]);
       setNinnosEnMonitor([]);
 
-      // 1. Actualizar documento usuario
       const docRef = doc(db, "usuarios", usuarioId);
       await setDoc(docRef, {
         modoMonitor: false,
         ninnosMonitor: []
       }, { merge: true });
 
-      // 2. Limpiar subcolección monitor
       const monitorRef = collection(db, "usuarios", usuarioId, "monitor");
       const snapshot = await getDocs(monitorRef);
       await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
@@ -364,38 +348,40 @@ export function DatosProvider({ children }: DatosProviderProps) {
     }
   };
 
-  // Objeto de valor para el contexto, tipado como DatosContextType
   const value: DatosContextType = {
-    ratioMannana,
-    setRatioMannana,
-    ratioMediodia,
-    setRatioMediodia,
-    ratioTarde,
-    setRatioTarde,
-    ratioNoche,
-    setRatioNoche,
-    maximaRatio,
-    setMaximaRatio,
-    factorSensibilidad,
-    setFactorSensibilidad,
-    modoMonitor,
-    setModoMonitor,
-    ninnos,
-    cargandoNinnos,
-    addNinno,
-    updateNinno,
-    deleteNinno,
-    getNinnoById,
-    usuario1,
-    setUsuario1,
-    usuarioId,
-    ninnosMonitor,
-    setNinnosMonitor,
-    ninnosEnMonitor,
-    activarModoMonitor,
-    desactivarModoMonitor,
-    cargarNinnosMonitor
-  };
+  ratioMannana,
+  setRatioMannana,
+  ratioMediodia,
+  setRatioMediodia,
+  ratioTarde,
+  setRatioTarde,
+  ratioNoche,
+  setRatioNoche,
+  maximaRatio,
+  setMaximaRatio,
+  factorSensibilidad,
+  setFactorSensibilidad,
+  modoMonitor,
+  setModoMonitor,
+  ninnos,
+  cargandoNinnos,
+  addNinno,
+  updateNinno,
+  deleteNinno,
+  getNinnoById,
+  usuario1,
+  setUsuario1,
+  usuarioId,
+  ninnosMonitor,
+  setNinnosMonitor,
+  ninnosEnMonitor,
+  activarModoMonitor,
+  desactivarModoMonitor,
+  cargarNinnosMonitor,
+  empezarCorregir,            
+  setEmpezarCorregir          
+};
+
 
   return <DatosContext.Provider value={value}>{children}</DatosContext.Provider>;
 }

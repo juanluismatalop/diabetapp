@@ -10,7 +10,7 @@ import {
 import { DatosContext } from "./datosContext";
 
 export default function CalculadoraMonitor() {
-  const { ninnos, factorSensibilidad } = useContext(DatosContext);
+  const { ninnos, factorSensibilidad, empezarCorregir } = useContext(DatosContext);
 
   const [raciones, setRaciones] = useState(""); // Común para todos
   const [glucosaPorNino, setGlucosaPorNino] = useState({}); // Glucosa individual
@@ -26,7 +26,7 @@ export default function CalculadoraMonitor() {
       const g = parseFloat(glucosaPorNino[index]) || 0;
       let correccion = 0;
 
-      if (g > 150 && factorSensibilidad) {
+      if (g > empezarCorregir && factorSensibilidad) {
         correccion = (g - 100) / factorSensibilidad;
       }
 
