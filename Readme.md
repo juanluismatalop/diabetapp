@@ -170,10 +170,11 @@ switch (pantalla) {
         ```
         let correccion = 0;
         
-        if (g > 150 && factorSensibilidad) {
+        if (g > empezarCoregir && factorSensibilidad) {
             correccion = (g - 100) / factorSensibilidad;
         }
         ```
+        empezar a corregir es una constante que se settea para que cuando sobrepase ese numero calcule la correccion necesaria
     __Tiempo de Espera__
     Una vez me dijeron que el tiempo de espera es las dos priemeras cifras de la glucosa 
     Ej 243 espero 23 minutos
