@@ -30,9 +30,7 @@ export default function MisDatos({ cambiarPantalla }: { cambiarPantalla: (pantal
       { nombre: "tarde", valor: parseFloat(tarde) || 0 },
       { nombre: "noche", valor: parseFloat(noche) || 0 },
     ];
-
     const fueraDeRango = ratios.find((r) => r.valor > maximaRatio);
-
     if (fueraDeRango) {
       Alert.alert(
         "Error de Ratio",

@@ -5,6 +5,7 @@ import {
   TextInput,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import { DatosContext } from "./datosContext";
 
@@ -61,7 +62,7 @@ export default function Calculadora() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.inputContainer}>
         <View style={styles.inputGroup}>
           <Text>Glucosa</Text>
@@ -85,10 +86,14 @@ export default function Calculadora() {
 
       <View style={styles.resultados}>
         <Text style={styles.resultText}>Insulina que poner:</Text>
-        <Text style={styles.resultValue}>{insulina !== null ? insulina : "-"}</Text>
+        <Text style={styles.resultValue}>
+          {insulina !== null ? insulina : "0"}
+        </Text>
 
         <Text style={styles.resultText}>Tiempo de Espera:</Text>
-        <Text style={styles.resultValue}>{espera !== null ? espera : "-"}</Text>
+        <Text style={styles.resultValue}>
+          {espera !== null ? espera : "0"}
+        </Text>
       </View>
 
       <View style={styles.umbralContainer}>
@@ -104,15 +109,32 @@ export default function Calculadora() {
         />
       </View>
 
+      {/* Bloque de 70% y 30% */}
+      <View style={styles.porcentajes}>
+        <Text style={styles.resultText}>70% de Insulina:</Text>
+        <Text style={styles.resultValue}>
+          {insulina !== null ? (insulina * 0.7).toFixed(1) : "-"}
+        </Text>
+
+        <Text style={styles.resultText}>30% de Insulina:</Text>
+        <Text style={styles.resultValue}>
+          {insulina !== null ? (insulina * 0.3).toFixed(1) : "-"}
+        </Text>
+      </View>
+
       <TouchableOpacity style={styles.botonExterior} onPress={calculoDInsulina}>
         <Text style={styles.botonInterior}>Calcular</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, alignItems: "center" },
+  container: {
+    padding: 20,
+    alignItems: "center",
+    paddingBottom: 40,
+  },
   inputContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -158,7 +180,10 @@ const styles = StyleSheet.create({
     borderRadius: 80,
     width: 150,
   },
-  botonExterior: {},
+  botonExterior: {
+    marginTop: 20,
+    marginBottom: 30,
+  },
   umbralContainer: {
     marginBottom: 20,
     alignItems: "center",
@@ -175,5 +200,16 @@ const styles = StyleSheet.create({
     padding: 5,
     width: 100,
     textAlign: "center",
+  },
+  porcentajes: {
+    backgroundColor: "white",
+    borderColor: "#45a0cc",
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 20,
+    width: 200,
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 10,
   },
 });
